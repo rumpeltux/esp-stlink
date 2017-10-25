@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "swim.h"
 #include <driver/uart.h>
 #include <espmissingincludes.h>
 #include <sys/param.h>
 #include <user_interface.h>
-#include "swim.h"
 
 #define SET_PIN_HIGH() (GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, BIT4))
 #define SET_PIN_LOW() (GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, BIT4))
@@ -115,7 +115,9 @@ static int read_bit(uint32_t *start);
 static int write_byte(uint32_t *pnext, uint32_t data, uint32_t mask) {
   uint32_t parity = 0;
   uint32_t next = *pnext;
-  next += 200;  // Some artificial delay. The target device doesn't mind and this makes it easier to distinguish byte boundaries when debugging in a logic analyzer.
+  next += 200;  // Some artificial delay. The target device doesn't mind and
+                // this makes it easier to distinguish byte boundaries when
+                // debugging in a logic analyzer.
   while (mask) {
     uint32_t bit = data & mask;
     write_bit_sync(next, data & (mask << 1), bit);
@@ -162,7 +164,8 @@ static int read_byte() {
   uint32_t next;
   int status;
   // PIN_PULLUP_DIS(PERIPHS_IO_MUX_GPIO4_U);
-  if ((status = read_bit(&next)) != BIT4) // the target always starts with a 1 bit
+  if ((status = read_bit(&next)) !=
+      BIT4)  // the target always starts with a 1 bit
     return status < 0 ? status : SWIM_ERROR_INVALID_TARGET_ID;
   uint32_t result = 0;
   uint32_t parity = 0;
@@ -245,7 +248,7 @@ int rotf(const uint8_t *len_and_address_spec, uint8_t *dest) {
  */
 int wotf(const uint8_t *data) {
   uint32_t state = esp8266_enter_critical();
-  int result = send_command(2, 4+data[0], data);
+  int result = send_command(2, 4 + data[0], data);
   esp8266_leave_critical(state);
   return result;
 }
