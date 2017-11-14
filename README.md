@@ -33,7 +33,7 @@ export XTENSA_TOOLS_ROOT=$ESP_OPEN_SDK/xtensa-lx106-elf/bin SDK_BASE=$ESP_OPEN_S
 make flash
 ```
 
-## Connecting
+## Connecting the ESP to STM8
 
 * The STM8 device of course needs G and 3.3V connections.
 * RST stays unconnected for now (potential future version could introduce a
@@ -41,13 +41,23 @@ make flash
 * SWIM is connected to ESP8266 GPIO4 (e.g. D2 on NodeMCU) **via a 1kΩ pull-up
   resistor** (this is important since the builtin pullup resistor is not
   capable of pulling up the line fast enough!).
+  
+## ESP connection to the host computer
+
+The ESP exposes a serial interface which `stm8flash` uses to communicate with
+the ESP. Typically you’ll want to use a USB-to-serial adapter.
+The internet is full of tutorials on how to connect to an ESP.
+
+If you like it simple, get a NodeMCU or WeMos development board. These work
+out of the box, just connect to your computer’s USB, `make flash` and you’re
+ready to use `stm8flash` with `espstlink`.
 
 ## Using ESP-STLINK with stm8flash
 
 Grab stm8flash from https://github.com/rumpeltux/stm8flash.
 
     stm8flash -c espstlink -p stm8s103f3 -w sample.ihx
-    
+
 ### Compatibility
 
 So far this has only been tested with an stm8s103f3 chip.
