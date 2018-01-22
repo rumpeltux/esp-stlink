@@ -46,7 +46,7 @@
 #define WSR_PS(w) __asm__ __volatile__("wsr %0,ps ; esync" ::"a"(w) : "memory")
 #define MICROS_TO_CYCLES(x) (x * 80)
 
-static uint32_t TIMEOUT = 220;
+static uint32_t TIMEOUT = 2200;
 
 /** Disable all interrupts. Used for timing-critical parts. */
 static inline uint32_t esp8266_enter_critical() {
@@ -227,10 +227,14 @@ void generate_len_and_address_spec(uint8_t *dest, size_t len, uint32_t addr) {
 int rotf(const uint8_t *len_and_address_spec, uint8_t *dest) {
   uint32_t state = esp8266_enter_critical();
   int status = send_command(1, 4, len_and_address_spec);
-  if (status < 0) return status;
+  if (status < 0) {
+    esp8266_leave_critical(state);
+    return status;
+  }
   for (int i = 0; i < len_and_address_spec[0]; i++) {
     int result = read_byte();
     if (result < 0) {
+      esp8266_leave_critical(state);
       return result;
     }
     dest[i] = result;
