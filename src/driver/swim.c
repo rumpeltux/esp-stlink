@@ -21,8 +21,24 @@
 #include <sys/param.h>
 #include <user_interface.h>
 
+#define SET_PINRESET_HIGH() (GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, BIT5))
+#define SET_PINRESET_LOW() (GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, BIT5))
+#define READ_PINRESET() (GPIO_REG_READ(GPIO_IN_ADDRESS) & BIT5)
+
+#define PINRESET_AS_OUTPUT()                        \
+  {                                                 \
+    SET_PINRESET_HIGH();                            \
+    GPIO_REG_WRITE(GPIO_ENABLE_W1TS_ADDRESS, BIT5); \
+  }
+#define PINRESET_AS_INPUT()                         \
+  {                                                 \
+    GPIO_REG_WRITE(GPIO_ENABLE_W1TC_ADDRESS, BIT5); \
+    PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO5_U);          \
+  }
+
 #define SET_PIN_HIGH() (GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, BIT4))
 #define SET_PIN_LOW() (GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, BIT4))
+#define READ_PIN() (GPIO_REG_READ(GPIO_IN_ADDRESS) & BIT4)
 
 #define PIN_AS_OUTPUT()                             \
   {                                                 \
@@ -34,8 +50,6 @@
     GPIO_REG_WRITE(GPIO_ENABLE_W1TC_ADDRESS, BIT4); \
     PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO4_U);          \
   }
-
-#define READ_PIN() (GPIO_REG_READ(GPIO_IN_ADDRESS) & BIT4)
 
 #define SHORT_PERIOD_LENGTH 27
 #define BIT_TOTAL_PERIOD_LENGTH 220
@@ -314,3 +328,16 @@ int swim_entry() {
               24);  // Need to wait at least 300ns (=24 cycles)
   return duration;
 }
+
+/** Toggles the reset PIN. */
+void reset(int on) {
+  if (on == 0xFF) {
+    PINRESET_AS_INPUT();
+  } else {
+    PINRESET_AS_OUTPUT();
+    on ? SET_PINRESET_HIGH() : SET_PINRESET_LOW();
+  }
+}
+
+/** On boot initialization. */
+void swim_init() { PINRESET_AS_INPUT(); }

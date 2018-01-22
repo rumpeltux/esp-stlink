@@ -11,8 +11,15 @@ and is not sent over the wire:
 | Soft Reset  | 1   | 0   |       |            |           |      |       |
 | Read        | 5   | 1   | count | addr >> 16 | addr >> 8 | addr |       |
 | Write       | 5+x | 2   | count | addr >> 16 | addr >> 8 | addr | data… |
+| Reset       | 2   | FD  | on    |            |           |      |       |
 | Swim Entry  | 1   | FE  |       |            |           |      |       |
 | Get Version | 1   | FF  |       |            |           |      |       |
+
+* The `reset` command toggles the GPIO Pin 5 (D1 on NodeMCU).
+  `on` can take these values:
+  * `0`: pin is pulled low (RESET)
+  * `1`: pin is pulled high (no reset)
+  * `0xFF`: pin is a pull-up input (default)
 
 ## Response
 
@@ -34,6 +41,7 @@ Here are the specific success case responses for each command:
 | Soft Reset  | 2   | 0   | 0       |              |            |           |      |       |
 | Read        | 6+x | 1   | 0       | count        | addr >> 16 | addr >> 8 | addr | data… |
 | Write       | 6   | 2   | 0       | count        | addr >> 16 | addr >> 8 | addr |       |
+| Reset       | 2   | FD  | 0       |              |            |           |      |       |
 | Swim Entry  | 4   | FE  | 0       | cycles >> 8  | cycles     |           |      |       |
 | Get Version | 4   | FF  | 0       | version >> 8 | version    |           |      |       |
 

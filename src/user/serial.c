@@ -43,6 +43,7 @@ static uint8_t cmd_buf[1 + 4 + 255];
 #define CMD_SRST 0
 #define CMD_ROTF 1
 #define CMD_WOTF 2
+#define CMD_RESET 0xFD
 #define CMD_INIT 0xFE
 #define CMD_VERSION 0xFF
 
@@ -61,8 +62,13 @@ static void ICACHE_FLASH_ATTR serial_recvTask(os_event_t *events) {
   while (HAVE_SERIAL_DATA()) {
     TICKLE_WATCHDOG();
     cmd_buf[cmd_buf_idx++] = READ_BYTE_FROM_SERIAL();
+
+    // See serial-protocol.md for a description.
+    // Here we check that any given command is complete including all arguments.
     if (cmd_buf[0] == CMD_ROTF && cmd_buf_idx < 5) continue;
     if (cmd_buf[0] == CMD_WOTF && cmd_buf[1] != cmd_buf_idx - 5) continue;
+    if (cmd_buf[0] == CMD_RESET && cmd_buf_idx < 2) continue;
+
     int result = 0;
     send_ack();
     switch (cmd_buf[0]) {
@@ -81,6 +87,9 @@ static void ICACHE_FLASH_ATTR serial_recvTask(os_event_t *events) {
         result = swim_entry();
         cmd_buf[cmd_buf_idx++] = result >> 8;
         cmd_buf[cmd_buf_idx++] = result;
+        break;
+      case CMD_RESET:
+        reset(cmd_buf[1]);
         break;
       case CMD_VERSION:
         cmd_buf[cmd_buf_idx++] = FIRMWARE_VERSION_MAJOR;

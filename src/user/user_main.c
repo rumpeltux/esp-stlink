@@ -11,10 +11,12 @@
  * You should have received a copy of the GNU General Public License along
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "driver/swim.h"
 #include "driver/uart.h"
 #include "serial.h"
 
 void user_init(void) {
+  swim_init();
   uart_init(BIT_RATE_115200, BIT_RATE_115200);
   uart0_sendStr("ESP-STLINK\r\n");
   serial_init();
