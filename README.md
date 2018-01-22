@@ -34,14 +34,19 @@ make flash
 ```
 
 ## Connecting the ESP to STM8
+<img src="imgs/connection-nodemcu.jpg" alt="NodeMCU connection" width="365" height="270" />
 
 * The STM8 device of course needs G and 3.3V connections.
-* RST stays unconnected for now (potential future version could introduce a
-  RST feature though).
+* The current firmware doesn't yet support the RST line, so leave it unconnected.
+  (This is contrary to the indication in the picture.)
+  <img src="imgs/connection-stm8.jpg" alt="STM8 connection" width="161" height="192" hspace="20" align="right" />
 * SWIM is connected to ESP8266 GPIO4 (e.g. D2 on NodeMCU) **via a 1kΩ pull-up
   resistor** (this is important since the builtin pullup resistor is not
   capable of pulling up the line fast enough!).
   
+  > NOTE: You can likely just integrate the resistor into your wires (see the
+  > attached picture) or even soldver it to your ESP-board permanently.
+
 ## ESP connection to the host computer
 
 The ESP exposes a serial interface which `stm8flash` uses to communicate with
