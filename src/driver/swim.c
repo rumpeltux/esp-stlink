@@ -46,7 +46,7 @@
 #define WSR_PS(w) __asm__ __volatile__("wsr %0,ps ; esync" ::"a"(w) : "memory")
 #define MICROS_TO_CYCLES(x) (x * 80)
 
-static uint32_t TIMEOUT = 2200;
+static uint32_t TIMEOUT = 0x7FF;
 
 /** Disable all interrupts. Used for timing-critical parts. */
 static inline uint32_t esp8266_enter_critical() {
