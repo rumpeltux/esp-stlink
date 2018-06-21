@@ -21,21 +21,24 @@
 #include <sys/param.h>
 #include <user_interface.h>
 
-#define SET_PIN_HIGH() (GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, BIT4))
-#define SET_PIN_LOW() (GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, BIT4))
+#define SWIM BIT4
+#define NRST BIT5
 
-#define PIN_AS_OUTPUT()                             \
+#define SET_PIN_HIGH(pin) (GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, pin))
+#define SET_PIN_LOW(pin) (GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, pin))
+
+#define PIN_AS_OUTPUT(mask)                         \
   {                                                 \
-    SET_PIN_HIGH();                                 \
-    GPIO_REG_WRITE(GPIO_ENABLE_W1TS_ADDRESS, BIT4); \
+    SET_PIN_HIGH(mask);                             \
+    GPIO_REG_WRITE(GPIO_ENABLE_W1TS_ADDRESS, mask); \
   }
 #define PIN_AS_INPUT()                              \
   {                                                 \
-    GPIO_REG_WRITE(GPIO_ENABLE_W1TC_ADDRESS, BIT4); \
+    GPIO_REG_WRITE(GPIO_ENABLE_W1TC_ADDRESS, SWIM); \
     PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO4_U);          \
   }
 
-#define READ_PIN() (GPIO_REG_READ(GPIO_IN_ADDRESS) & BIT4)
+#define READ_PIN() (GPIO_REG_READ(GPIO_IN_ADDRESS) & SWIM)
 
 #define SHORT_PERIOD_LENGTH 27
 #define BIT_TOTAL_PERIOD_LENGTH 220
@@ -79,7 +82,7 @@ static inline void sync_ccount(uint32_t next) {
  */
 static inline void finish_sync(uint32_t last) {
   sync_ccount(last + BIT_TOTAL_PERIOD_LENGTH - SHORT_PERIOD_LENGTH);
-  SET_PIN_HIGH();
+  SET_PIN_HIGH(SWIM);
 }
 
 /**
@@ -94,13 +97,13 @@ static void write_bit_sync(uint32_t next, uint32_t prev_bit,
                            uint32_t current_bit) {
   if (!prev_bit) {
     sync_ccount(next - SHORT_PERIOD_LENGTH);
-    SET_PIN_HIGH();
+    SET_PIN_HIGH(SWIM);
   }
   sync_ccount(next);
-  SET_PIN_LOW();
+  SET_PIN_LOW(SWIM);
   if (current_bit) {
     sync_ccount(next + SHORT_PERIOD_LENGTH);
-    SET_PIN_HIGH();
+    SET_PIN_HIGH(SWIM);
   }
 }
 
@@ -179,7 +182,7 @@ static int read_byte() {
   }
   next += BIT_TOTAL_PERIOD_LENGTH;  // TODO: should substract a few cycles that
                                     // we loose while calculating the value...
-  PIN_AS_OUTPUT();
+  PIN_AS_OUTPUT(SWIM);
   write_bit_sync(next, 0, !(parity & 1));
   finish_sync(next);
   PIN_AS_INPUT();
@@ -192,13 +195,13 @@ static int read_byte() {
  * Returns -1 if the host failed to ACK a packet within TIMEOUT.
  */
 int send_command(uint32_t cmd, size_t len, const uint8_t *data) {
-  PIN_AS_OUTPUT();
+  PIN_AS_OUTPUT(SWIM);
   uint32_t next = get_ccount() + 40;
   int status = write_byte(&next, cmd, BIT3);
   if (status != BIT4) return status < 0 ? status : SWIM_ERROR_NACK;
   for (int i = 0; i < len; i++) {
     next = MAX(next + BIT_TOTAL_PERIOD_LENGTH, get_ccount() + 40);
-    PIN_AS_OUTPUT();
+    PIN_AS_OUTPUT(SWIM);
     int status = write_byte(&next, data[i], BIT8);
     if (status == BIT4)  // ACK received
       continue;
@@ -268,17 +271,22 @@ int srst() {
 /** Sends the SWIM activation sequence. */
 int swim_entry() {
   // Set GPIO2 to output mode
-  PIN_AS_OUTPUT();
-  uint32_t counter = get_ccount();
+  PIN_AS_OUTPUT(NRST|SWIM);
+  int32_t counter = get_ccount();
+
+  SET_PIN_HIGH(SWIM);
+  SET_PIN_LOW(NRST);
+  counter += 80 * 8;  // 8μs
+  sync_ccount(counter);
 
   // Initial 16us LOW
-  SET_PIN_LOW();
+  SET_PIN_LOW(SWIM);
   counter += 80 * 16;  // 16μs
   sync_ccount(counter);
 
   // 4 pulses at 1kHz, 4 pulses at 2kHz
   for (int i = 0; i < 16; i++) {
-    i & 1 ? SET_PIN_LOW() : SET_PIN_HIGH();
+    i & 1 ? SET_PIN_LOW(SWIM) : SET_PIN_HIGH(SWIM);
     // 1st 8 iterations: 500us per state, last 8 iterations: 250us per state.
     for (int j = 0; j < 50; j++) {
       system_soft_wdt_feed();
@@ -290,7 +298,6 @@ int swim_entry() {
   // Now comes the tricky part where communication is relatively fast, so
   // we don’t want to have any interrupts etc disturbing us.
   uint32_t state = esp8266_enter_critical();
-  SET_PIN_HIGH();
   PIN_AS_INPUT();
 
   // Give the device 10us to respond.
@@ -310,7 +317,13 @@ int swim_entry() {
   if (!timeout) return SWIM_ERROR_SYNC_TIMEOUT_2;
 
   esp8266_leave_critical(state);
-  sync_ccount(counter + duration +
-              24);  // Need to wait at least 300ns (=24 cycles)
+
+  SET_PIN_HIGH(SWIM);
+  PIN_AS_INPUT();
+  sync_ccount(counter + duration + 24 );
+
+  SET_PIN_HIGH(NRST);
+
+  sync_ccount(get_ccount() + MICROS_TO_CYCLES(1000));
   return duration;
 }
