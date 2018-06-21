@@ -298,6 +298,7 @@ int swim_entry() {
   // Now comes the tricky part where communication is relatively fast, so
   // we don’t want to have any interrupts etc disturbing us.
   uint32_t state = esp8266_enter_critical();
+  SET_PIN_HIGH(SWIM);
   PIN_AS_INPUT();
 
   // Give the device 10us to respond.
