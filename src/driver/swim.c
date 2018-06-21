@@ -272,7 +272,7 @@ int srst() {
 int swim_entry() {
   // Set GPIO2 to output mode
   PIN_AS_OUTPUT(NRST|SWIM);
-  int32_t counter = get_ccount();
+  uint32_t counter = get_ccount();
 
   SET_PIN_HIGH(SWIM);
   SET_PIN_LOW(NRST);
