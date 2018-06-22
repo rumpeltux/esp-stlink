@@ -16,6 +16,7 @@
  */
 
 #include "swim.h"
+#include "version.h"
 #include <driver/uart.h>
 #include <espmissingincludes.h>
 #include <sys/param.h>
@@ -32,13 +33,13 @@
     SET_PIN_HIGH(pin);                              \
     GPIO_REG_WRITE(GPIO_ENABLE_W1TS_ADDRESS, pin);  \
   }
-#define PIN_AS_INPUT()                              \
+#define PIN_AS_INPUT(pin)                           \
   {                                                 \
-    GPIO_REG_WRITE(GPIO_ENABLE_W1TC_ADDRESS, SWIM); \
+    GPIO_REG_WRITE(GPIO_ENABLE_W1TC_ADDRESS, pin);  \
     PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO4_U);          \
   }
 
-#define READ_PIN() (GPIO_REG_READ(GPIO_IN_ADDRESS) & SWIM)
+#define READ_PIN(pin) (GPIO_REG_READ(GPIO_IN_ADDRESS) & pin)
 
 #define SHORT_PERIOD_LENGTH 27
 #define BIT_TOTAL_PERIOD_LENGTH 220
@@ -130,7 +131,7 @@ static int write_byte(uint32_t *pnext, uint32_t data, uint32_t mask) {
   }
   write_bit_sync(next, data & 1, parity);
   finish_sync(next);
-  PIN_AS_INPUT();
+  PIN_AS_INPUT(SWIM);
   return read_bit(pnext);
 }
 
@@ -146,12 +147,12 @@ static int write_byte(uint32_t *pnext, uint32_t data, uint32_t mask) {
  */
 static int read_bit(uint32_t *start) {
   uint32_t timeout = TIMEOUT;
-  while (READ_PIN() && --timeout)
+  while (READ_PIN(SWIM) && --timeout)
     ;
   if (!timeout) return SWIM_ERROR_READ_BIT_TIMEOUT;
   *start = get_ccount();
   sync_ccount(*start + 10 * 9);
-  return READ_PIN();
+  return READ_PIN(SWIM);
 }
 
 /**
@@ -185,7 +186,7 @@ static int read_byte() {
   PIN_AS_OUTPUT(SWIM);
   write_bit_sync(next, 0, !(parity & 1));
   finish_sync(next);
-  PIN_AS_INPUT();
+  PIN_AS_INPUT(SWIM);
   if (parity & 1) return SWIM_ERROR_PARITY;
   return result >> 1;
 }
@@ -275,7 +276,11 @@ int swim_entry() {
   uint32_t counter = get_ccount();
 
   SET_PIN_HIGH(SWIM);
-  SET_PIN_LOW(NRST);
+
+#if(FIRMWARE_VERSION_MAJOR + FIRMWARE_VERSION_MINOR == 0)
+  reset(true);
+#endif
+
   counter += 80 * 8;  // 8μs
   sync_ccount(counter);
 
@@ -299,11 +304,11 @@ int swim_entry() {
   // we don’t want to have any interrupts etc disturbing us.
   uint32_t state = esp8266_enter_critical();
   SET_PIN_HIGH(SWIM);
-  PIN_AS_INPUT();
+  PIN_AS_INPUT(SWIM);
 
   // Give the device 10us to respond.
   uint32_t timeout = MICROS_TO_CYCLES(30) / 6;
-  while (READ_PIN() && --timeout)
+  while (READ_PIN(SWIM) && --timeout)
     ;  // ~6 cycles
   counter = get_ccount();
   if (!timeout) return SWIM_ERROR_SYNC_TIMEOUT_1;
@@ -312,7 +317,7 @@ int swim_entry() {
   // 128 cycles (@8MHz) i.e. 16us. We currently just use it as a sanity
   // check to make sure the (right) device responds.
   timeout = MICROS_TO_CYCLES(30) / 6;
-  while (!READ_PIN() && --timeout)
+  while (!READ_PIN(SWIM) && --timeout)
     ;  // ~6 cycles
   int duration = get_ccount() - counter;
   if (!timeout) return SWIM_ERROR_SYNC_TIMEOUT_2;
@@ -320,11 +325,26 @@ int swim_entry() {
   esp8266_leave_critical(state);
 
   SET_PIN_HIGH(SWIM);
-  PIN_AS_INPUT();
+  PIN_AS_INPUT(SWIM);
   sync_ccount(counter + duration + 24 );
 
-  SET_PIN_HIGH(NRST);
+#if(FIRMWARE_VERSION_MAJOR + FIRMWARE_VERSION_MINOR == 0)
+  reset(false);
+#endif
 
   sync_ccount(get_ccount() + MICROS_TO_CYCLES(1000));
   return duration;
 }
+
+/** Toggles the reset PIN. */
+void reset(int on) {
+  if (on == 0xFF) {
+    PIN_AS_INPUT(NRST);
+  } else {
+    PIN_AS_OUTPUT(NRST);
+    on ? SET_PIN_LOW(NRST) : SET_PIN_HIGH(NRST);
+  }
+}
+
+/** On boot initialization. */
+void swim_init() { PIN_AS_INPUT(NRST); }
