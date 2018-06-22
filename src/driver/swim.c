@@ -27,10 +27,10 @@
 #define SET_PIN_HIGH(pin) (GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, pin))
 #define SET_PIN_LOW(pin) (GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, pin))
 
-#define PIN_AS_OUTPUT(mask)                         \
+#define PIN_AS_OUTPUT(pin)                          \
   {                                                 \
-    SET_PIN_HIGH(mask);                             \
-    GPIO_REG_WRITE(GPIO_ENABLE_W1TS_ADDRESS, mask); \
+    SET_PIN_HIGH(pin);                              \
+    GPIO_REG_WRITE(GPIO_ENABLE_W1TS_ADDRESS, pin);  \
   }
 #define PIN_AS_INPUT()                              \
   {                                                 \
