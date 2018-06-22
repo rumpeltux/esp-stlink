@@ -330,9 +330,9 @@ int swim_entry() {
 
 #if(FIRMWARE_VERSION_MAJOR + FIRMWARE_VERSION_MINOR == 0)
   reset(false);
+  sync_ccount(get_ccount() + MICROS_TO_CYCLES(1000));
 #endif
 
-  sync_ccount(get_ccount() + MICROS_TO_CYCLES(1000));
   return duration;
 }
 
