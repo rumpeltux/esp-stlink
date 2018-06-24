@@ -326,7 +326,7 @@ int swim_entry() {
 
   SET_PIN_HIGH(SWIM);
   PIN_AS_INPUT(SWIM);
-  sync_ccount(counter + duration + 24 );
+  sync_ccount(counter + duration + 24 ); // Need to wait at least 300ns (=24 cycles)
 
 #if(FIRMWARE_VERSION_MAJOR + FIRMWARE_VERSION_MINOR == 0)
   reset(false);
