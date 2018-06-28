@@ -278,7 +278,7 @@ int swim_entry() {
   SET_PIN_HIGH(SWIM);
 
 #if(FIRMWARE_VERSION_MAJOR + FIRMWARE_VERSION_MINOR == 0)
-  reset(true);
+  reset(1);
 #endif
 
   counter += 80 * 8;  // 8μs
@@ -329,7 +329,7 @@ int swim_entry() {
   sync_ccount(counter + duration + 24 ); // Need to wait at least 300ns (=24 cycles)
 
 #if(FIRMWARE_VERSION_MAJOR + FIRMWARE_VERSION_MINOR == 0)
-  reset(false);
+  reset(0);
   sync_ccount(get_ccount() + MICROS_TO_CYCLES(1000));
 #endif
 
@@ -347,4 +347,4 @@ void reset(int on) {
 }
 
 /** On boot initialization. */
-void swim_init() { PIN_AS_INPUT(NRST); }
+void swim_init() { SET_PIN_HIGH(NRST); PIN_AS_OUTPUT(NRST); }
