@@ -16,7 +16,6 @@
  */
 
 #include "swim.h"
-#include "version.h"
 #include <driver/uart.h>
 #include <espmissingincludes.h>
 #include <sys/param.h>
@@ -28,15 +27,15 @@
 #define SET_PIN_HIGH(pin) (GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, pin))
 #define SET_PIN_LOW(pin) (GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, pin))
 
-#define PIN_AS_OUTPUT(pin)                          \
-  {                                                 \
-    SET_PIN_HIGH(pin);                              \
-    GPIO_REG_WRITE(GPIO_ENABLE_W1TS_ADDRESS, pin);  \
+#define PIN_AS_OUTPUT(pin)                         \
+  {                                                \
+    SET_PIN_HIGH(pin);                             \
+    GPIO_REG_WRITE(GPIO_ENABLE_W1TS_ADDRESS, pin); \
   }
-#define PIN_AS_INPUT(pin)                           \
-  {                                                 \
-    GPIO_REG_WRITE(GPIO_ENABLE_W1TC_ADDRESS, pin);  \
-    PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO4_U);          \
+#define PIN_AS_INPUT(pin)                          \
+  {                                                \
+    GPIO_REG_WRITE(GPIO_ENABLE_W1TC_ADDRESS, pin); \
+    PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO4_U);         \
   }
 
 #define READ_PIN(pin) (GPIO_REG_READ(GPIO_IN_ADDRESS) & pin)
@@ -275,15 +274,6 @@ int swim_entry() {
   PIN_AS_OUTPUT(SWIM);
   uint32_t counter = get_ccount();
 
-  SET_PIN_HIGH(SWIM);
-
-#if(FIRMWARE_VERSION_MAJOR + FIRMWARE_VERSION_MINOR == 0)
-  reset(1);
-#endif
-
-  counter += 80 * 8;  // 8μs
-  sync_ccount(counter);
-
   // Initial 16us LOW
   SET_PIN_LOW(SWIM);
   counter += 80 * 16;  // 16μs
@@ -323,12 +313,8 @@ int swim_entry() {
   if (!timeout) return SWIM_ERROR_SYNC_TIMEOUT_2;
 
   esp8266_leave_critical(state);
-
-  sync_ccount(counter + duration + 24 ); // Need to wait at least 300ns (=24 cycles)
-
-#if(FIRMWARE_VERSION_MAJOR + FIRMWARE_VERSION_MINOR == 0)
-  reset(0);
-#endif
+  sync_ccount(counter + duration +
+              24);  // Need to wait at least 300ns (=24 cycles)
 
   return duration;
 }
@@ -344,4 +330,7 @@ void reset(int on) {
 }
 
 /** On boot initialization. */
-void swim_init() { SET_PIN_HIGH(NRST); PIN_AS_OUTPUT(NRST); }
+void swim_init() {
+  SET_PIN_HIGH(NRST);
+  PIN_AS_OUTPUT(NRST);
+}
