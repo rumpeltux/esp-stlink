@@ -17,7 +17,7 @@ Also I really don't see the point of needing a special one-purpose-only device
 to flash the stm8 chips (even though they are cheap).
 
 The timing is based on counting cpu-cycles, as such the code currently only
-orks if the ESP is running at 80MHz and not at 160MHz.
+works if the ESP is running at 80MHz and not at 160MHz.
 Only slow data transfer speed is implemented, but this shouldn’t really matter.
 From what my logic analyzer told me the actual stlink device didn’t use
 high-speed either.
@@ -44,7 +44,7 @@ make flash
   capable of pulling up the line fast enough!).
   
   > NOTE: You can likely just integrate the resistor into your wires (see the
-  > attached picture) or even soldver it to your ESP-board permanently.
+  > attached picture) or even solder it to your ESP-board permanently.
 
 ## ESP connection to the host computer
 
