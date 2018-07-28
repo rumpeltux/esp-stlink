@@ -90,6 +90,7 @@ static void ICACHE_FLASH_ATTR serial_recvTask(os_event_t *events) {
         break;
       case CMD_RESET:
         reset(cmd_buf[1]);
+        cmd_buf_idx = 1;
         break;
       case CMD_VERSION:
         cmd_buf[cmd_buf_idx++] = FIRMWARE_VERSION_MAJOR;
