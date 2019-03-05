@@ -25,6 +25,7 @@ high-speed either.
 ## Building
 
 1. Install [esp-open-sdk](https://github.com/pfalcon/esp-open-sdk)
+1. `sudo apt install esptool`
 1. Compile and flash
 
 ```
