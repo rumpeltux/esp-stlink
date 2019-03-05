@@ -32,7 +32,7 @@ int rotf(const uint8_t *len_and_address_spec, uint8_t *dest);
 int wotf(const uint8_t *data);
 int srst();
 int swim_entry();
-void reset();
+void reset(int on);
 void swim_init();
 
 #endif
