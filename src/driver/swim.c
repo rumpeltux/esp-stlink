@@ -40,8 +40,12 @@
 
 #define READ_PIN(pin) (GPIO_REG_READ(GPIO_IN_ADDRESS) & pin)
 
+// SWIM slow format is 8 MHz, 2 cycles high, 20 cycles low (or vice versa)
+// Translated to 80 MHz ESP clock (+ some empirical adjustments)
 #define SHORT_PERIOD_LENGTH 27
-#define BIT_TOTAL_PERIOD_LENGTH 220
+#define SWIM_CLOCK 10
+#define BIT_HALF_TIME (9 * SWIM_CLOCK) // We start the read after 9 swim clocks and use this input.
+#define BIT_TOTAL_PERIOD_LENGTH (22 * SWIM_CLOCK)
 
 // Read Set Interrupt Level
 #define RSIL(r) __asm__ __volatile__("rsil %0,15 ; esync" : "=a"(r))
@@ -68,10 +72,10 @@ static inline uint32_t get_ccount(void) {
   return ccount;
 }
 
-// TODO: Make sure this works while wrapping too.
 /** Waits until the CPU’s cycle count passes a given number. */
 static inline void sync_ccount(uint32_t next) {
-  while (get_ccount() < next)
+  // get_ccount() < next
+  while ((int32_t) get_ccount() - (int32_t) next < 0)
     ;
 }
 
@@ -136,11 +140,15 @@ static int write_byte(uint32_t *pnext, uint32_t data, uint32_t mask) {
 
 /**
  * Reads one bit. PIN must be in INPUT mode.
- * On invocation, PIN must be HIGH before start of the bit or LOW within the
- * beginning of the bit.
+ * In SWIM protocol a bit starts LOW.
+ * a) On invocation, PIN must be HIGH (when starting the read after the previous
+ *    bit) or LOW when starting the read after the device already sent LOW.
+ * b) *start is set to the time at which we first realized that the bit is LOW
+ *    so only shortly after the actual bit start.
  * Before the next read invocation, cycles must be synced to
- *     at least *start + 200.
- * Before the next sending, cycles must be synced to at least *start + 220.
+ *     at least *start + 200 to guarantee (a).
+ * Before the next sending, cycles must be synced to at least
+ *     *start + BIT_TOTAL_PERIOD_LENGTH.
  * Returns the bit received or -1 if no response was
  * received (in which case *start is not modified).
  */
@@ -150,7 +158,7 @@ static int read_bit(uint32_t *start) {
     ;
   if (!timeout) return SWIM_ERROR_READ_BIT_TIMEOUT;
   *start = get_ccount();
-  sync_ccount(*start + 10 * 9);
+  sync_ccount(*start + BIT_HALF_TIME);
   return READ_PIN(SWIM);
 }
 
@@ -166,7 +174,6 @@ static int read_bit(uint32_t *start) {
 static int read_byte() {
   uint32_t next;
   int status;
-  // PIN_PULLUP_DIS(PERIPHS_IO_MUX_GPIO4_U);
   if ((status = read_bit(&next)) !=
       BIT4)  // the target always starts with a 1 bit
     return status < 0 ? status : SWIM_ERROR_INVALID_TARGET_ID;
@@ -174,14 +181,17 @@ static int read_byte() {
   uint32_t parity = 0;
   uint32_t i;
   for (i = 0; i < 9; i++) {
-    sync_ccount(next + 18 * 10);
+    sync_ccount(next + 18 * SWIM_CLOCK);
     int bit = read_bit(&next);
-    if (bit == SWIM_ERROR_READ_BIT_TIMEOUT) return -i - 20;
+    if (bit == SWIM_ERROR_READ_BIT_TIMEOUT) {
+      // indicate which bit failed (for debugging)
+      return -i - 20;
+    }
     result = result << 1 | !!bit;
     parity ^= result;
   }
   next += BIT_TOTAL_PERIOD_LENGTH;  // TODO: should substract a few cycles that
-                                    // we loose while calculating the value...
+                                    // we lost while calculating the value...
   PIN_AS_OUTPUT(SWIM);
   write_bit_sync(next, 0, !(parity & 1));
   finish_sync(next);
