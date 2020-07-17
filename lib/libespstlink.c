@@ -40,6 +40,7 @@ static void set_error(int code, char *format, ...) {
   if (error.message != NULL) free(error.message);
 
   memset(&error, 0, sizeof(error));
+  error.code = code;
 
   // Calculate required memory size
   va_list arglist;
@@ -48,6 +49,7 @@ static void set_error(int code, char *format, ...) {
   va_end(arglist);
 
   // Store actual message.
+  size++;
   error.message = malloc(size);
   va_start(arglist, format);
   vsnprintf(error.message, size, format, arglist);
@@ -59,15 +61,18 @@ static void set_error(int code, char *format, ...) {
 espstlink_t *espstlink_open(const char *device) {
   struct termios tty;
   memset(&tty, 0, sizeof tty);
+  const char *dev = device == NULL ? "/dev/ttyUSB0" : device;
 
-  int fd = open(device == NULL ? "/dev/ttyUSB0" : device, O_RDWR | O_NOCTTY);
+  int fd = open(dev, O_RDWR | O_NOCTTY);
   if (fd < 0) {
+    set_error(ESPSTLINK_ERROR_SERIAL, "Couldn't open tty '%s'", dev);
     perror("Couldn't open tty");
     return NULL;
   }
 
   /* Error Handling */
   if (tcgetattr(fd, &tty) != 0) {
+    set_error(ESPSTLINK_ERROR_SERIAL, "Couldn't open tty '%s'", dev);
     perror("Couldn't open tty");
     return NULL;
   }
@@ -87,6 +92,7 @@ espstlink_t *espstlink_open(const char *device) {
   /* Flush Port, then applies attributes */
   tcflush(fd, TCIFLUSH);
   if (tcsetattr(fd, TCSANOW, &tty) != 0) {
+    set_error(ESPSTLINK_ERROR_SERIAL, "Setting tty attributes failed on '%s'", dev);
     perror("Setting tty attributes failed");
     return NULL;
   }
