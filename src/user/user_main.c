@@ -17,7 +17,7 @@
 
 void user_init(void) {
   swim_init();
-  uart_init(BIT_RATE_115200, BIT_RATE_115200);
+  uart_init(BIT_RATE_921600, BIT_RATE_921600);
   uart0_sendStr("ESP-STLINK\r\n");
   serial_init();
 }

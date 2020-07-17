@@ -31,6 +31,7 @@ class Flasher(object):
     for record in ihx.load_merged(ihx_filename):
       print('%04x:%04x\t%d blocks (%d bytes) ' % (record.addr, record.addr + len(record.data), len(record.data) / 0x40, len(record.data)), end='')
       self.write_segment(record.addr, record.data)
+      print()
 
 if __name__ == '__main__':
   import argparse

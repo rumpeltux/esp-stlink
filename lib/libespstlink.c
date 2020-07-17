@@ -66,26 +66,26 @@ espstlink_t *espstlink_open(const char *device) {
   int fd = open(dev, O_RDWR | O_NOCTTY);
   if (fd < 0) {
     set_error(ESPSTLINK_ERROR_SERIAL, "Couldn't open tty '%s'", dev);
-    perror("Couldn't open tty");
+    perror(NULL);
     return NULL;
   }
 
   /* Error Handling */
   if (tcgetattr(fd, &tty) != 0) {
     set_error(ESPSTLINK_ERROR_SERIAL, "Couldn't open tty '%s'", dev);
-    perror("Couldn't open tty");
+    perror(NULL);
     return NULL;
   }
 
   /* Set Baud Rate */
-  cfsetospeed(&tty, (speed_t)B115200);
-  cfsetispeed(&tty, (speed_t)B115200);
+  cfsetospeed(&tty, (speed_t)B921600);
+  cfsetispeed(&tty, (speed_t)B921600);
 
   /* Setting other Port Stuff */
-  tty.c_cc[VMIN] = 0;             // read does block
+  tty.c_cc[VMIN] = 0;             // read does block (until timeout)
   tty.c_cc[VTIME] = 1;            // 0.1 seconds read timeout
   tty.c_cflag |= CREAD | CLOCAL;  // turn on READ & ignore ctrl lines
-
+  
   /* Make raw */
   cfmakeraw(&tty);
 
@@ -93,11 +93,30 @@ espstlink_t *espstlink_open(const char *device) {
   tcflush(fd, TCIFLUSH);
   if (tcsetattr(fd, TCSANOW, &tty) != 0) {
     set_error(ESPSTLINK_ERROR_SERIAL, "Setting tty attributes failed on '%s'", dev);
-    perror("Setting tty attributes failed");
+    perror(NULL);
     return NULL;
   }
   espstlink_t *pgm = malloc(sizeof(espstlink_t));
+  pgm->version = -1;
   pgm->fd = fd;
+  
+  if (!espstlink_fetch_version(pgm)) {
+    // older versions used slower serial speed. try again with that one.
+    cfsetospeed(&tty, (speed_t)B115200);
+    cfsetispeed(&tty, (speed_t)B115200);
+    tcflush(fd, TCIFLUSH);
+    if (tcsetattr(fd, TCSANOW, &tty) != 0) {
+      set_error(ESPSTLINK_ERROR_SERIAL, "Setting tty attributes failed on '%s'", dev);
+      perror(NULL);
+      espstlink_close(pgm);
+      return NULL;
+    }
+    
+    if (!espstlink_fetch_version(pgm)) {
+      espstlink_close(pgm);
+      return NULL;
+    }
+  }
   return pgm;
 }
 
@@ -139,9 +158,34 @@ static const char *swim_error_name(int code) {
   }
 }
 
+static bool is_data_available(int fd, int timeout_ms) {
+  fd_set set;
+  struct timeval timeout;
+
+  /* Initialize the file descriptor set. */
+  FD_ZERO (&set);
+  FD_SET (fd, &set);
+
+  /* Initialize the timeout data structure. */
+  timeout.tv_sec = 0;
+  timeout.tv_usec = timeout_ms * 1000;
+  
+  return select(FD_SETSIZE, &set, NULL, NULL, &timeout) != 0;
+}  
+
 static bool error_check(int fd, uint8_t command, uint8_t *resp_buf,
                         size_t size) {
   uint8_t buf[4];
+
+  if (!is_data_available(fd, /*timeout_ms=*/ 10)) {
+    set_error(ESPSTLINK_ERROR_READ,
+              "Device didn't respond to command: %s", command_name(command));
+    if (command == 0xFF) { // GET_VERSION
+      fprintf(stderr, "(this may be ok if the device is running espstlink prior to v0.2)\n");
+    }
+    return 0;
+  }
+
   int len = read(fd, buf, 1);
   if (len < 1) {
     set_error(ESPSTLINK_ERROR_READ,
@@ -205,6 +249,9 @@ static bool error_check(int fd, uint8_t command, uint8_t *resp_buf,
 }
 
 bool espstlink_fetch_version(espstlink_t *pgm) {
+  // don't bother if we already fetched the version previously.
+  if (pgm->version != -1) return 1;
+
   uint8_t cmd[] = {0xFF};
   uint8_t resp_buf[2];
 
@@ -212,7 +259,7 @@ bool espstlink_fetch_version(espstlink_t *pgm) {
   if (!error_check(pgm->fd, cmd[0], resp_buf, 2)) return 0;
 
   int version = resp_buf[0] << 8 | resp_buf[1];
-  if (version > 1) {
+  if (version > 2) {
     set_error(ESPSTLINK_ERROR_VERSION, "Unsupported target version: %d.\n",
               version);
     error.device_code = version;

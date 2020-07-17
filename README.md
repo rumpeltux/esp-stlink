@@ -57,7 +57,21 @@ If you like it simple, get a NodeMCU or WeMos development board. These work
 out of the box, just connect to your computer’s USB, `make flash` and you’re
 ready to use `stm8flash` with `espstlink`.
 
+## Flashing firmware
+
+Easiest is to use the python tool (only works with STM8S not STM8L for now):
+
+    python3 python/flash.py -d /dev/ttyUSB0 -i sample.ihx
+
+You need to build `libespstlink.so` first by running:
+
+    make -C lib
+
 ## Using ESP-STLINK with stm8flash
+
+**Note:** Older versions of stm8flash will not work with current versions, since
+starting with v0.2 of espstlink the default baudrate was switched from 115200 to
+921600, which allows for significantly faster flash speeds.
 
 Grab stm8flash from https://github.com/rumpeltux/stm8flash.
 

@@ -10,10 +10,6 @@ if __name__ == '__main__':
   args = parser.parse_args()
   dev = espstlink.STLink(args.device.encode())
   dev.init()
-  import time
-  start = time.time()
-  for i in range(10):
-    dev.read(0x505F)
-  print(time.time() - start)
-  for addr in range(0x7F80, 0xa000, 0x80):
-    pass#sys.stdout.buffer.write(dev.read_bytes(addr, 0x80))
+  for addr in range(0x8000, 0xa000, 0x80):
+    chunk = dev.read_bytes(addr, 0x80)
+    #sys.stdout.buffer.write(chunk)

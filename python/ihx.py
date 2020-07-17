@@ -37,6 +37,7 @@ def load_merged(filename: str):
 if __name__ == '__main__':
   import sys
 
-  for record in load_merged(sys.argv[1]):
-    print('%04x [%d]\t%s\t' % (record.addr, len(record.data), full), record)
+  for filename in sys.argv[1:]:
+    for record in load_merged(filename):
+      print('%s:\t%04x [%d]\t' % (filename, record.addr, len(record.data)), record)
     
