@@ -34,6 +34,14 @@ export XTENSA_TOOLS_ROOT=$ESP_OPEN_SDK/xtensa-lx106-elf/bin SDK_BASE=$ESP_OPEN_S
 make flash
 ```
 
+### Using a precompiled binary
+
+Grap the latest `esp-stlink-firmware.tgz` from the releases page and flash it using:
+
+    esptool --baud 460800 --port /dev/ttyUSB0 write_flash \
+        0x00000 firmware/0x00000.bin \
+        0x10000 firmware/0x10000.bin
+
 ## Connecting the ESP to STM8
 <img src="imgs/connection-nodemcu.jpg" alt="NodeMCU connection" width="365" height="270" />
 
