@@ -21,8 +21,8 @@
 #include <sys/param.h>
 #include <user_interface.h>
 
-#define SWIM BIT4
-#define NRST BIT5
+#define SWIM BIT0
+#define NRST BIT2
 
 #define SET_PIN_HIGH(pin) (GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, pin))
 #define SET_PIN_LOW(pin) (GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, pin))
