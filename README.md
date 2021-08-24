@@ -51,7 +51,7 @@ Grap the latest `esp-stlink-firmware.tgz` from the releases page and flash it us
 * SWIM is connected to ESP8266 GPIO4 (e.g. D2 on NodeMCU) **via a 1kΩ pull-up
   resistor** (this is important since the builtin pullup resistor is not
   capable of pulling up the line fast enough!).
-  
+
   > NOTE: You can likely just integrate the resistor into your wires (see the
   > attached picture) or even solder it to your ESP-board permanently.
 
@@ -67,13 +67,13 @@ ready to use `stm8flash` with `espstlink`.
 
 ## Flashing firmware
 
-Easiest is to use the python tool (only works with STM8S not STM8L for now):
-
-    python3 python/flash.py -d /dev/ttyUSB0 -i sample.ihx
-
 You need to build `libespstlink.so` first by running:
 
     make -C lib
+
+Easiest is to use the python tool (only works with STM8S not STM8L for now):
+
+    python3 python/flash.py -d /dev/ttyUSB0 -i sample.ihx
 
 ## Using ESP-STLINK with stm8flash
 

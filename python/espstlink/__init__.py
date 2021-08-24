@@ -2,6 +2,8 @@ from ctypes import *
 import time
 import os
 
+stlink = None
+
 for location in [
   os.path.join(os.path.dirname(__file__), "..", "..", "lib", "libespstlink.so"),
   os.path.join(os.path.dirname(__file__), "libespstlink.so"),
@@ -54,7 +56,7 @@ class STLink(object):
   def init(self, swim_entry=True, reset=True):
     """
     Starts a swim session.
-    
+
     If reset=True the chip will be put into reset for this.
     """
     if reset:
@@ -74,7 +76,7 @@ class STLink(object):
   def reset(self, value, input=False):
     """
     Performs a hardware reset of the STM8 device.
-    
+
     If input is True, the reset line will be configured as input.
     """
     if not stlink.espstlink_reset(self.pgm, input, value):
