@@ -43,17 +43,19 @@ Grap the latest `esp-stlink-firmware.tgz` from the releases page and flash it us
         0x10000 firmware/0x10000.bin
 
 ## Connecting the ESP to STM8
+(pinout on image has changed please see below)
 <img src="imgs/connection-nodemcu.jpg" alt="NodeMCU connection" width="365" height="270" />
 
 * The STM8 device of course needs G and 3.3V connections.
   <img src="imgs/connection-stm8.jpg" alt="STM8 connection" width="161" height="192" hspace="20" align="right" />
-* The RST line is connected to ESP8266 GPIO5 (D1 on NodeMCU).
-* SWIM is connected to ESP8266 GPIO4 (e.g. D2 on NodeMCU) **via a 1kΩ pull-up
+* The RST line is connected to ESP8266 GPIO2 (D4 on NodeMCU).
+* SWIM is connected to ESP8266 GPIO0 (D3 on NodeMCU) **via a 1kΩ pull-up
   resistor** (this is important since the builtin pullup resistor is not
   capable of pulling up the line fast enough!).
 
   > NOTE: You can likely just integrate the resistor into your wires (see the
   > attached picture) or even solder it to your ESP-board permanently.
+  > ESP-01 also supported
 
 ## ESP connection to the host computer
 
