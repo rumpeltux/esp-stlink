@@ -55,6 +55,9 @@ Grap the latest `esp-stlink-firmware.tgz` from the releases page and flash it us
   > NOTE: You can likely just integrate the resistor into your wires (see the
   > attached picture) or even solder it to your ESP-board permanently.
 
+To use other pins (e.g. on ESP01), [edit src/driver/swim.h](https://github.com/rumpeltux/esp-stlink/pull/14/commits/85b623648cd0e23b32bed80f588a16d292a5e8d0).
+  
+
 ## ESP connection to the host computer
 
 The ESP exposes a serial interface which `stm8flash` uses to communicate with
