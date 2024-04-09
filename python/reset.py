@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Resets the STM8 device and unstalls the CPU.
+"""Resets the STM8 device and unstalls the CPU."""
 
 import espstlink
 from espstlink.debugger import Debugger
@@ -12,5 +12,5 @@ args = parser.parse_args()
 
 dev = espstlink.STLink(args.device.encode())
 dev.init()
-deb = debugger.Debugger(dev)
+deb = Debugger(dev)
 deb.cont()
