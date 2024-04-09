@@ -27,7 +27,8 @@ class Options(register.Collection):
 
   def unlock(self):
     self.flash.unlock_option_bytes()
-    self.flash.unlock()
+    self.flash.unlock_data()
+    self.flash.unlock_prog()
 
 class Flash(register.Collection):
   def __init__(self, stlink):
