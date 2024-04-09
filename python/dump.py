@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Dumps flash to stdout."""
 import espstlink
 import sys
 
@@ -12,4 +13,4 @@ if __name__ == '__main__':
   dev.init()
   for addr in range(0x8000, 0xa000, 0x80):
     chunk = dev.read_bytes(addr, 0x80)
-    #sys.stdout.buffer.write(chunk)
+    sys.stdout.buffer.write(chunk)
