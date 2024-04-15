@@ -110,7 +110,6 @@ class STLink(object):
       value = value << 8 | i
     return value
 
-
   def write_bytes(self, address: int, buf: bytes) -> bool:
     """Writes up to 255 bytes starting from address."""
     assert len(buf) < 255
@@ -123,9 +122,9 @@ class STLink(object):
     return self.write_bytes(address, bytearray([value]))
 
   def write_w(self, address: int, size: int, value: int) -> bool:
-    """Writes a multibyte integer starting to address."""
+    """Writes a little-endian multibyte integer to address."""
     out = bytearray(size)
-    for i in range(size):
+    for i in reversed(range(size)):
       out[i] = value & 0xff
       value >>= 8
     return self.write_bytes(address, out)
