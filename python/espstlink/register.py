@@ -43,7 +43,7 @@ class Register(object):
     self.offset = offset
     self.bits = {}
     self.add_bits(bits)
-    
+
   def add_bit(self, name, start, mask=1):
     self.bits[name] = Bit(start=start, mask=mask, register=self)
 
