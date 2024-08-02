@@ -24,15 +24,18 @@ high-speed either.
 
 ## Building
 
-1. Install [esp-open-sdk](https://github.com/pfalcon/esp-open-sdk)
-1. `sudo apt install esptool`
-1. Compile and flash
+- Use [Platformio](https://docs.platformio.org/en/stable/integration/ide/vscode.html) to easily build and flash ESP8266 from the VScode.
 
-```
-ESP_OPEN_SDK=/opt/esp-open-sdk
-export XTENSA_TOOLS_ROOT=$ESP_OPEN_SDK/xtensa-lx106-elf/bin SDK_BASE=$ESP_OPEN_SDK/sdk flash
-make flash
-```
+- Alternatively,
+  1. Install [esp-open-sdk](https://github.com/pfalcon/esp-open-sdk)
+  1. `sudo apt install esptool`
+  1. Compile and flash:
+
+  ```
+  ESP_OPEN_SDK=/opt/esp-open-sdk
+  export XTENSA_TOOLS_ROOT=$ESP_OPEN_SDK/xtensa-lx106-elf/bin SDK_BASE=$ESP_OPEN_SDK/sdk flash
+  make flash
+  ```
 
 ### Using a precompiled binary
 
